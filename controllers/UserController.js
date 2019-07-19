@@ -8,6 +8,7 @@ class UserController {
 
         this.onSubmit();
         this.onEdit();
+        this.selectAll();
     }
 
     onEdit() {
@@ -36,6 +37,7 @@ class UserController {
 
 
             this.getPhoto(this.forUpdatemEl).then(
+
                 (content) => {
 
                     if (!values.photo) {
@@ -44,25 +46,17 @@ class UserController {
                         result._photo = content;
                     }
 
-                    tr.dataset.user = JSON.stringify(result);
+                    let user = new User();
 
-                    tr.innerHTML = `
-                        <td><img src="${result._photo}" alt="User Image" class="img-circle img-sm"></td>
-                        <td>${result._name}</td>
-                        <td>${result._email}</td>
-                        <td>${(result._admin) ? 'Sim' : 'Não'}</td>
-                        <td>${Utils.dateFormat(result._register)}</td>
-                        <td>
-                            <button type="button" class="btn btn-primary btn-edit btn-xs btn-flat">Editar</button>
-                            <button type="button" class="btn btn-danger btn-xs btn-flat">Excluir</button>
-                        </td>
-                    `;
+                    user.loadFromJSON(result);
 
-                    this.addEventsTr(tr);
+                    user.save();
+
+                    this.getTr(user, tr);
 
                     this.updateCount();
 
-                    this.formIdUpdate.reset();
+                    this.forUpdatemEl.reset();
 
                     btn.disabled = false
 
@@ -94,9 +88,14 @@ class UserController {
             this.getPhoto(this.formEl).then(
                 (content) => {
 
-                    values.photo = content;                
+                    values.photo = content;  
+                    
+                    values.save();
+
                     this.addLine(values);
+
                     this.formEl.reset();
+
                     btn.disabled = false
 
                 }, 
@@ -189,9 +188,44 @@ class UserController {
 
     }
 
+    getUsersSotorage() {
+
+        let users = [];
+
+        if (localStorage.getItem("users")) {
+
+            users = JSON.parse(localStorage.getItem("users"));
+        }
+
+        return users;
+    }
+
+    selectAll() {
+
+        let users = this.getUsersSotorage();
+
+        users.forEach(dataUser=>{
+
+            let user = new User();
+
+            user.loadFromJSON(dataUser);
+
+            this.addLine(user);
+        });
+    }
+    
     addLine(dataUser) {
 
-        let tr = document.createElement('tr');
+        let tr = this.getTr(dataUser)
+
+        this.tableEl.appendChild(tr);    
+
+        this.updateCount();
+    }
+
+    getTr(dataUser, tr = null) {
+
+        if (tr === null) tr = document.createElement('tr');
 
         tr.dataset.user = JSON.stringify(dataUser);
 
@@ -207,11 +241,9 @@ class UserController {
             </td>
         `;
 
-       this.addEventsTr(tr);
+        this.addEventsTr(tr);
 
-        this.tableEl.appendChild(tr);    
-
-        this.updateCount();
+        return tr;
     }
 
     addEventsTr(tr) {
